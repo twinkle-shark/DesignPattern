@@ -1,0 +1,65 @@
+************************************************
+package work01;
+
+public class MainClass {
+
+	public static void main(String[] args) {
+		// TODO 自动生成的方法存根
+		LoginForm lg=new LoginForm();
+		lg.init();
+		lg.display();
+		lg.validate();
+	}
+
+}
+
+************************************************
+package work01;
+
+public class LoginForm{
+	private UserDAO dao= new UserDAO();
+	public void init() {
+		System.out.println("初始化成功");
+	}
+	public void display() {
+		System.out.println("显示控件");
+	}
+	public void validate() {
+		dao.findUser("UserName", "UserPassword");
+		System.out.println("使用dao对象来监测用户名和密码");
+	}
+}
+
+************************************************
+package work01;
+
+import java.sql.Connection;
+
+public class UserDAO {
+	private DBUtil db=new DBUtil();
+	public boolean findUser(String userName,String userPassword) {
+		//调用db中的方法来判断是否登录成功
+//以下代码没有实际意义可忽略
+		Connection conn=db.getConnect();
+		if(userName=="chenzhiwei"&&userPassword=="456") {
+			return true;
+		}else {
+			return false;
+		}
+	}
+
+}
+
+************************************************
+package work01;
+
+import java.sql.Connection;
+
+public class DBUtil {
+	public Connection getConnect() {
+		System.out.println("已连接数据库！");
+		Connection conn=null;
+		return conn;		
+	}
+
+}
