@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.baizhi.mapper.UserMapper">
+
+
+<!--  注意：最好不要把注释写在SQL语句里面  -->
+
+
+<!--    配置resultMap 解决表中的字段和类中的属性不一致-->
+    <resultMap id="userResultMap" type="user">
+<!--
+id标签：代表的id字段和类的属性匹配
+result标签：代表普通字段和类的属性匹配
+-->
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result property="birthday" column="birthday" />
+        <result column="sex" property="sex"/>
+        <result column="address" property="address"/>
+    </resultMap>
+    <select id="findAllUser" resultMap="userResultMap">
+/**
+  属性名称和字段名没有保持一致
+  查询的结果不能封装在实体类里面
+ */
+        select * from mybatis_db
+    </select>
+    <select id="findUserByName" parameterType="String" resultMap="userResultMap">
+        select * from mybatis_db where username=#{username}
+    </select>
+    <select id="findUserById" parameterType="int" resultMap="userResultMap">
+        select * from mybatis_db where id=#{id}
+    </select>
+
+<!--    模糊查询-->
+<!--    #占位符会自动拼接单引号
+        如果传入的参数是基本类型或者是String类型那么#{}可以写任意字符
+        -->
+    <select id="findUserByDim" parameterType="String" resultMap="userResultMap">
+        select * from mybatis_db where username like #{username}
+    </select>
+<!--    第二种方式-->
+<!--    如果传入的参数是基本类型或者是String类型那么${}只能写value
+        $占位符不会自动拼接单引号-->
+<!--    不推荐-->
+    <select id="findUserByDim1" parameterType="String" resultMap="userResultMap">
+        select * from mybatis_db where username like '${value}'
+    </select>
+    <!--select * from mybatis_db where user_id=#{arg0} and username=#{arg1};-->
+    <!--select * from mybatis_db where user_id=#{param1} and username=#{param2};-->
+    <select id="findUserByIdAndName" resultMap="userResultMap">
+        select * from mybatis_db where user_id=#{param1} and username=#{param2}
+    </select>
+    <select id="findUserByIdAndName1" resultMap="userResultMap">
+        select * from mybatis_db where user_id=#{id} and username=#{username}
+    </select>
+
+
+    <!--    传入实体对象时#{}里面的属性名应该和对象实体的名字保持一致-->
+<!--    推荐使用-->
+    <select id="findUserByIdAndName2" resultMap="userResultMap">
+        select * from mybatis_db where user_id=#{id} and username=#{username}
+    </select>
+
+
+
+<!--    添加一条数据-->
+<!--    useGeneratedKeys="true"表示获取主键
+        keyProperty="id"表示将主键值封装在实体类中的id属性中
+        使用方式一般只使用在sql主键自增的情况下，主键不自增不生效-->
+    <insert id="add" parameterType="User" useGeneratedKeys="true" keyProperty="id">
+        insert into mybatis_db(username,birthday,sex,address) values (#{username},#{birthday},#{sex},#{address})
+    </insert>
+
+<!--    <selectKey>表示获取主键值
+        keyColumn="id"指定从哪个字段获取值
+        keyProperty="id"指定封装在哪个实体属性中
+        order="AFTER"表示在之后执行-->
+    <insert id="add1" parameterType="User">
+    <selectKey keyColumn="id" keyProperty="id" order="AFTER" resultType="int">
+        select last_insert_id()
+    </selectKey>
+        insert into mybatis_db(username,birthday,sex,address) values (#{username},#{birthday},#{sex},#{address})
+    </insert>
+
+<!--    动态sql查询-->
+    <!--concat('%',#{bname},'%')-->
+    <select id="findAnimateSql" parameterType="user" resultMap="userResultMap">
+        select *
+        from mybatis_db
+        <where>
+            <if test="username!=null">
+                and username like concat('%',#{username},'%')
+            </if>
+            <if test="sex!=null">
+                and sex like concat('%',#{sex},'%')
+            </if>
+            <if test="address!=null">
+                and address like concat('%',#{address},'%')
+            </if>
+        </where>
+    </select>
+    <update id="update" parameterType="User">
+        update mybatis_db
+        <set>
+            <if test="username!=null">
+                username=#{username},
+            </if>
+            <if test="sex!=null">
+                sex=#{sex},
+            </if>
+            <if test="birthday!=null">
+                birthday=#{birthday},
+            </if>
+            <if test="address!=null">
+                address=#{address},
+            </if>
+        </set>
+        where user_id=#{id}
+    </update>
+<!--    枚举集合查询-->
+<!--     where user_id in ()-->
+    <select id="findManyId" parameterType="Integer" resultMap="userResultMap">
+        select * from mybatis_db
+        <where>
+            <foreach collection="collection" open="id in(" close=")" item="id" separator=",">
+                #{id}
+            </foreach>
+        </where>
+    </select>
+<!--    数组遍历-->
+    <select id="findManyId1" parameterType="Integer" resultMap="userResultMap">
+        select * from mybatis_db
+        <where>
+            <foreach collection="array" open="id in(" close=")" item="id" separator=",">
+                #{id}
+            </foreach>
+        </where>
+    </select>
+<!--    配置resultMap属性-->
+    <resultMap id="userMap" type="user">
+        <id property="id" column="id"/>
+        <result column="username" property="username"/>
+        <result column="sex" property="sex"/>
+        <result column="address" property="address"/>
+        <collection property="listOrders" ofType="Orders">
+            <id column="oid" property="id"/>
+            <result column="ordertime" property="orderTime"/>
+            <result column="total" property="total"/>
+        </collection>
+    </resultMap>
+    <select id="findAllUserAndOrders" resultMap="userMap">
+        select u.*,o.id oid,o.ordertime,o.total from mybatis_db u
+        left join orders o
+        on u.id=o.uid
+    </select>
+    <resultMap id="findAllUserAndRoleMap" type="user">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="sex" property="sex"/>
+        <result column="address" property="address"/>
+        <collection property="listRoles" ofType="role">
+            <id column="roleid" property="id"/>
+            <result column="rolename" property="roleName"/>
+            <result column="roleDesc" property="roledesc"/>
+        </collection>
+    </resultMap>
+    <select id="findAllUserAndRole" resultMap="findAllUserAndRoleMap">
+        select * from mybatis_db u
+        left join sys_user_role ur
+        on u.id = ur.userid
+        left join sys_role r
+        on ur.roleid = r.id
+    </select>
+    <resultMap id="findUserByIdAndRoleMap" type="user">
+        <id column="userid" property="id"/>
+        <collection property="listRoles" ofType="role">
+            <id column="roleid" property="id"/>
+            <result column="rolename" property="roleName"/>
+            <result column="roleDesc" property="roledesc"/>
+        </collection>
+    </resultMap>
+    <select id="findUserByIdAndRole" parameterType="Integer" resultMap="findUserByIdAndRoleMap">
+        select * from  sys_user_role ur
+        left join sys_role r
+        on ur.userid=r.id
+        where r.id=#{id}
+    </select>
+</mapper>
